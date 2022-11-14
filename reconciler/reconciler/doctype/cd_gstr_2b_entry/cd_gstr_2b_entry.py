@@ -17,7 +17,9 @@ class CDGSTR2BEntry(Document):
 @frappe.whitelist()
 def link_supplier(doc_name):
 	doc = frappe.get_doc('CD GSTR 2B Entry', doc_name)
+	print('doc and doc name***************',doc,doc_name)
 	supplier = get_supplier_by_gstin(doc.cf_party_gstin)
+	print('supplier*********************',supplier)
 	if supplier:
 		doc.cf_party = supplier
 		doc.save(ignore_permissions=True)
@@ -61,6 +63,7 @@ def rematch_result(doc_name):
 	month_threshold = -(frappe.db.get_single_value('CD GSTR 2B Settings', 'month_threshold'))
 	doc_val = frappe.db.get_values('CD GSTR 2B Data Upload Tool', filters={'name': doc.cf_uploaded_via}, 
 			fieldname=["cf_company_gstin", "cf_return_period"])
+	print('doc val ***************************',doc_val, doc.cf_uploaded_via)
 
 	return_period_year = int(doc_val[0][1][-4::])
 	return_period_month = int(doc_val[0][1][:2])
@@ -70,6 +73,7 @@ def rematch_result(doc_name):
 
 	from_date = add_months(to_date, month_threshold)
 	pr_list = get_pr_list(doc_val[0][0], from_date, to_date)
+	print('pr list*************',pr_list,doc_val[0][0],from_date,to_date)
 	gstr2b_doc_params = {
 		'name': doc.name,
 		'gstin': doc.cf_party_gstin,
@@ -84,6 +88,7 @@ def rematch_result(doc_name):
 		'cess_amount': doc.cf_cess_amount
 	}
 	res = get_match_status(gstr2b_doc_params, pr_list)
+	print('res%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%',res)
 	if res:
 		if doc.cf_match_status:
 			if not doc.cf_match_status == res[1]:

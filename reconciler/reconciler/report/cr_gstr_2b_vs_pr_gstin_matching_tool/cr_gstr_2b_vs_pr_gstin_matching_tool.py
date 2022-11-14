@@ -333,6 +333,7 @@ def return_period_query():
 	rp_list = frappe.db.get_list('CD GSTR 2B Data Upload Tool',['cf_return_period'])
 	for data in rp_list:
 		return_period_list.append(data['cf_return_period'])
+		print('sorted************************',sorted(set(return_period_list)))
 	return sorted(set(return_period_list))
 
 @frappe.whitelist()
@@ -401,8 +402,10 @@ def get_selection_details(gstr2b, purchase_inv):
 
 @frappe.whitelist()
 def get_link_view_details(gstr2b, pr_list):
+	print('pr list %%%%%%%%%%%%%%%%%%%',pr_list)
 	if isinstance(pr_list, string_types):
 		pr_list = json.loads(pr_list)
+	
 	tax_details = {}
 	other_details = {}
 	main_details = {}
@@ -496,7 +499,9 @@ def get_suggested_pr_list(gstr2b, from_date, to_date):
 
 @frappe.whitelist()
 def link_pr(gstr2b, pr):
+	print('pr in report^^^^^^^^^^^^^^^',pr)
 	gstr2b_doc = frappe.get_doc('CD GSTR 2B Entry', gstr2b)
+	print('gstr2b doc in report###################',gstr2b_doc)
 	pr_doc = frappe.get_doc('Purchase Invoice', pr)
 	gstr2b_doc_params = {
 		'name': gstr2b_doc.name,
@@ -511,6 +516,7 @@ def link_pr(gstr2b, pr):
 		'sgst_amount': gstr2b_doc.cf_sgst_amount,
 		'cess_amount': gstr2b_doc.cf_cess_amount
 	}
+	print('gstr2b doc param in report***********************',gstr2b_doc_params)
 
 	pr_doc_params = {'name': pr_doc.name,
 					'gstin': pr_doc.supplier_gstin,
@@ -518,6 +524,8 @@ def link_pr(gstr2b, pr):
 					'document_type': 'Invoice',
 					'document_number': pr_doc.bill_no,
 					'total_taxable_amount': pr_doc.total}
+
+	print('pr doc params in report*******************************',pr_doc_params)
 	
 	pr_doc_params.update(get_tax_details(pr))
 	res = get_match_status(gstr2b_doc_params, [pr_doc_params])
