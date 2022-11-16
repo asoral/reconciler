@@ -8,7 +8,7 @@ frappe.ui.form.on('CD GSTR 2B Entry', {
 			 frm.trigger('link_supplier');
 			});
 			if(frm.doc.cf_purchase_invoice){ 
-				frm.add_custom_button(__("Unlink PR"), function() {
+				frm.add_custom_button(__("Unlink PI"), function() {
 				 frm.trigger('unlink_pr');
 			 });}
 			 if(frm.doc.cf_transaction_type == 'Invoice' && !frm.doc.cf_purchase_invoice){ 
@@ -62,7 +62,7 @@ frappe.ui.form.on('CD GSTR 2B Entry', {
 				args: {doc_name:frm.doc.name},
 				callback: function(r) {
 					frm.reload_doc();
-					frappe.msgprint(__("PR Unlinked successfully"))
+					frappe.msgprint(__("PI Unlinked successfully"))
 				}
 			})
 		}
@@ -76,7 +76,7 @@ frappe.ui.form.on('CD GSTR 2B Entry', {
 			args: {doc_name:frm.doc.name},
 			callback: function(r) {
 				frm.reload_doc();
-				frappe.msgprint(__("PR Unlinked successfully"))
+				frappe.msgprint(__("PI Unlinked successfully"))
 			}
 		})
 	}

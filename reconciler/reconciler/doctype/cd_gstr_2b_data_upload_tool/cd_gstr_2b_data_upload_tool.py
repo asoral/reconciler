@@ -34,7 +34,7 @@ class CDGSTR2BDataUploadTool(Document):
 						{'match_type':'Partial Match','total_docs':0},
 						{'match_type':'Probable Match','total_docs':0},
 						{'match_type':'Mismatch','total_docs':0},
-						{'match_type':'Missing in PR','total_docs':0}]
+						{'match_type':'Missing in PI','total_docs':0}]
 		for row in match_summary:
 			row['total_docs'] = frappe.db.count('CD GSTR 2B Entry', {'cf_uploaded_via': self.name, 'cf_match_status': row['match_type']})
 
@@ -346,7 +346,7 @@ def link_documents(uploaded_doc_name):
 	return_period_month = int(doc_val[0][1][:2])
 	to_date = last_day_of_month(return_period_year, return_period_month)
 	if not to_date:
-		frappe.throw(_(f'To date not found for the PR filters'))
+		frappe.throw(_(f'To date not found for the PI filters'))
 
 	from_date = add_months(to_date, month_threshold)
 	gstr2b_list = frappe.get_list('CD GSTR 2B Entry', 
@@ -373,7 +373,7 @@ def link_documents(uploaded_doc_name):
 			update_match_status(doc, res)
 			pr_list[:] = [doc for doc in pr_list if doc != res[0]]
 		else:
-			frappe.db.set_value('CD GSTR 2B Entry', doc['name'], 'cf_match_status', 'Missing in PR')
+			frappe.db.set_value('CD GSTR 2B Entry', doc['name'], 'cf_match_status', 'Missing in PI')
 			frappe.db.set_value('CD GSTR 2B Entry', doc['name'], 'cf_reason', None)
 			frappe.db.set_value('CD GSTR 2B Entry', doc['name'], 'cf_purchase_invoice', None)
 			frappe.db.commit()
