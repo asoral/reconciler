@@ -34,7 +34,7 @@ class CDGSTR2BDataUploadTool(Document):
 						{'match_type':'Partial Match','total_docs':0},
 						{'match_type':'Probable Match','total_docs':0},
 						{'match_type':'Mismatch','total_docs':0},
-						{'match_type':'Missing in PR','total_docs':0}]
+						{'match_type':'Missing in PI','total_docs':0}]
 		for row in match_summary:
 			row['total_docs'] = frappe.db.count('CD GSTR 2B Entry', {'cf_uploaded_via': self.name, 'cf_match_status': row['match_type']})
 
@@ -44,8 +44,11 @@ class CDGSTR2BDataUploadTool(Document):
 		json_data = frappe.get_file_json(frappe.local.site_path + self.cf_upload_gstr_2b_data)
 		return_period = json_data['data']['rtnprd']
 		existing_doc = frappe.db.get_value('CD GSTR 2B Data Upload Tool', {'cf_return_period': return_period}, 'name')
+		a = frappe.get_all('CD GSTR 2B Entry',{'docstatus':0},['name'])
 		if existing_doc and not existing_doc == self.name:
-			frappe.throw(_(f'Unable to proceed. Already another document {comma_and("""<a href="#Form/CD GSTR 2B Data Upload Tool/{0}">{1}</a>""".format(existing_doc, existing_doc))} uploaded for the return period {frappe.bold(return_period)}.'))
+			for i in a:
+				d = frappe.delete_doc('CD GSTR 2B Entry',i.name)
+		# 	frappe.throw(_(f'Unable to proceed. Already another document {comma_and("""<a href="#Form/CD GSTR 2B Data Upload Tool/{0}">{1}</a>""".format(existing_doc, existing_doc))} uploaded for the return period {frappe.bold(return_period)}.'))
 		if not json_data['data']['gstin'] == self.cf_company_gstin:
 			frappe.throw(_(f'Invalid JSON. Company GSTIN mismatched with uploaded 2B data.'))
 
@@ -61,15 +64,16 @@ class CDGSTR2BDataUploadTool(Document):
 				_("Create GSTR 2B entries already in progress. Please wait for sometime.")
 			)
 		else:
-			enqueue(
-				create_gstr2b_entries,
-				queue = "default",
-				timeout = 6000,
-				event = 'create_gstr2b_entries',
-				json_data = json_data,
-				doc = self,
-				job_name = self.name
-			)
+			# enqueue(
+			# 	create_gstr2b_entries,
+			# 	queue = "default",
+			# 	timeout = 6000,
+			# 	event = 'create_gstr2b_entries',
+			# 	json_data = json_data,
+			# 	doc = self,
+			# 	job_name = self.name
+			# )
+			create_gstr2b_entries(json_data, self)
 			frappe.msgprint(
 				_("Create GSTR 2B entries job added to the queue. Please check after sometime.")
 			)
@@ -90,7 +94,7 @@ def create_gstr2b_entries(json_data, doc):
 		del json_data['data']['rtnprd']
 		if 'b2b' in json_data['data']['docdata']:
 			transaction_based_mappings = {
-				'inum': 'cf_document_number'
+				'inum': 'cf_document_number'	
 			}
 			data['cf_transaction_type'] = 'Invoice'
 			doc, total_entries_created = update_transaction_details('inv', json_data['data']['docdata']['b2b'], transaction_based_mappings,\
@@ -201,30 +205,41 @@ def update_transaction_details(txn_key, txn_details, mappings, data, uploaded_do
 		}
 
 	for row in txn_details:
+		
 		for key in list(row.keys()):
+			
 			if key in party_based_field_mappings:
+				
 				data[party_based_field_mappings[key]] = row[key]
 				if key == 'ctin':
 					data['cf_party'] = get_supplier_by_gstin(row[key])
 				del row[key]
 		uploaded_doc.cf_no_of_entries_in_json += len(row[txn_key])
 		for inv in row[txn_key]:
+			
 			new_doc = frappe.get_doc(data)
 			inv_tax_amt = 0
 			for key1 in list(inv.keys()):
+				
 				if key1 in common_field_mappings:
 					setattr(new_doc, common_field_mappings[key1], inv[key1])
 					if key1 == 'dt':
 						setattr(new_doc, common_field_mappings[key1], datetime.strptime(inv[key1] , "%d-%m-%Y").date())
+						
 					if key1 == 'suptyp':
 						setattr(new_doc, common_field_mappings[key1], note_supply_type[inv[key1]])
+						
 					if key1 == 'typ' and txn_key == 'inv':
 						setattr(new_doc, common_field_mappings[key1], inv_type[inv[key1]])
+						
 					if key1 == 'typ' and txn_key == 'nt':
 						setattr(new_doc, common_field_mappings[key1], note_type[inv[key1]])
+						
 					if key1 == 'pos':
 						setattr(new_doc, common_field_mappings[key1], inv[key1]+'-'+state_numbers[inv[key1]])
+						
 					del inv[key1]
+					print('key*****************************',key1,common_field_mappings)
 				if key1 == 'items':
 					new_doc, tax_details = update_inv_items(inv, new_doc, invoice_item_field_mappings)
 					for tax_key in invoice_item_field_mappings:
@@ -316,7 +331,7 @@ def link_documents(uploaded_doc_name):
 	return_period_month = int(doc_val[0][1][:2])
 	to_date = last_day_of_month(return_period_year, return_period_month)
 	if not to_date:
-		frappe.throw(_(f'To date not found for the PR filters'))
+		frappe.throw(_(f'To date not found for the PI filters'))
 
 	from_date = add_months(to_date, month_threshold)
 	gstr2b_list = frappe.get_list('CD GSTR 2B Entry', 
@@ -342,7 +357,7 @@ def link_documents(uploaded_doc_name):
 			update_match_status(doc, res)
 			pr_list[:] = [doc for doc in pr_list if doc != res[0]]
 		else:
-			frappe.db.set_value('CD GSTR 2B Entry', doc['name'], 'cf_match_status', 'Missing in PR')
+			frappe.db.set_value('CD GSTR 2B Entry', doc['name'], 'cf_match_status', 'Missing in PI')
 			frappe.db.set_value('CD GSTR 2B Entry', doc['name'], 'cf_reason', None)
 			frappe.db.set_value('CD GSTR 2B Entry', doc['name'], 'cf_purchase_invoice', None)
 			frappe.db.commit()
@@ -440,7 +455,7 @@ def get_match_status(gstr2b_doc, pr_list, amount_threshold = 1):
 			count += 1
 		else:
 			reason.append('Document Date')
-		if pr['document_number'] == gstr2b_doc['document_number']:
+		if str(pr['document_number']) in str(gstr2b_doc['document_number']):
 			count += 1
 		else:
 			reason.append('Document Number')
@@ -488,7 +503,7 @@ def get_match_status(gstr2b_doc, pr_list, amount_threshold = 1):
 		for row in mismatch_list[:]:
 			if not row[0]['document_date'] == gstr2b_doc['document_date']:
 				mismatch_list.remove(row)
-			elif not row[0]['document_number'] == gstr2b_doc['document_number']:
+			elif  str(row[0]['document_number']) not in str(gstr2b_doc['document_number']):
 				if not apply_approximation(gstr2b_doc['document_number'], row[0]['document_number']):
 					mismatch_list.remove(row)
 				else:
@@ -511,7 +526,7 @@ def get_probable_match(pr_list, gstr2b_doc, amount_params, probable_reason, amou
 			count += 1
 		else:
 			reason.append('Document Date')
-		if pr['document_number'] == gstr2b_doc['document_number']:
+		if str(pr['document_number']) in str(gstr2b_doc['document_number']):
 			count += 1
 		else:
 			reason.append('Document Number')

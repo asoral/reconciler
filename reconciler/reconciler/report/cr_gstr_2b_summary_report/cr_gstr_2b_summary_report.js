@@ -86,7 +86,7 @@ frappe.query_reports["CR GSTR 2B Summary Report"] = {
 	],
 	onload: function(query_report) {
 		frappe.call({
-			method : 'reconciler.reconciler.report.cr_gstr_2b_vs_pr_gstin_matching_tool.cr_gstr_2b_vs_pr_gstin_matching_tool.return_period_query',
+			method : 'reconciler.reconciler.report.cr_gstr_2b_vs_pi_gstin_matching_tool.cr_gstr_2b_vs_pi_gstin_matching_tool.return_period_query',
 			freeze : true,
 			callback: function(r) {
 				if(r.message) {
