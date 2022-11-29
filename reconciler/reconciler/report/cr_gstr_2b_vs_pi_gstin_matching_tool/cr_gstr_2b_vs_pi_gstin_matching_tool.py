@@ -534,75 +534,14 @@ def link_pr(gstr2b, pr):
 	else:
 		frappe.throw(_("2B record data is not matched with the selected PI"))
 
-def get_context(company, doc):
-	template_doc = copy.deepcopy(doc)
-	# del template_doc.company
-	# template_doc.from_date = format_date(template_doc.from_date)
-	# template_doc.to_date = format_date(template_doc.to_date)
-	return {
-		"doc": template_doc,
-		"company": frappe.get_doc("Company", company),
-		"frappe": frappe.utils,
-	}
-
-# @frappe.whitelist()
-# def send_emails(company,supplier):
-# 	# print("****************************",self.get_data())
-# 	print("ccccccccccccc",company)
-# 	cmp = frappe.db.get_value('Company',{'name':company},['email'])
-# 	print('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',cmp)
-	
-# 	entry = frappe.get_all('CD GSTR 2B Entry',['*'])
-# 	print('entry*********************',entry)
-# 	for j in entry:
-# 		print('jjjjjjjjjjjjjjjjjjjjjj',j.cf_company,j.cf_return_period)
-# 		doc = frappe.get_all('CD GSTR 2B Entry',{
-# 			'cf_match_status':'Missing in PI',
-# 			'cf_company':j.cf_company,
-# 			'cf_return_period':j.cf_return_period,
-# 			},['cf_party'])
-# 		print('doc************************',doc)
-# 		if doc:
-# 			address = frappe.get_all('Address',['name','email_id'])
-# 			print('address*****************************',address)
-# 		for i in address:
-# 			doc = frappe.db.get_value('Address',i.name,['email_id'])
-# 			print('IIIIIIIIIIIIIIIIIIIIIIIIIIII',i.email_id)
-# 			email = i.email_id
-# 			context = get_context(company, doc)
-# 			subject = frappe.render_template('hello',context)
-# 			message = frappe.render_template('hello',context)
-
-# 			frappe.enqueue(
-# 				# queue="short",
-# 				method=frappe.sendmail,
-# 				# recipients=cmp,
-# 				sender=frappe.session.user,
-# 				cc=i.email_id,
-# 				subject=subject,
-# 				message=message,
-# 				now=True,
-# 				reference_doctype="Company",
-# 				# reference_name=document_name,
-# 				# attachments=attachments,
-# 			)
-
-# 	return True
-
-
 
 @frappe.whitelist()
-def send_notifications(company,supplier):
-	entry = frappe.get_all('CD GSTR 2B Entry',['*'])
-	print('entry*********************',entry)
-	for j in entry:
-		print('jjjjjjjjjjjjjjjjjjjjjj',j.cf_company,j.cf_return_period)
-		doc = frappe.get_all('CD GSTR 2B Entry',{
-			'cf_match_status':["in",['Missing in PI',"Partial Match"]],
-			# 'cf_match_status':'Partial Match',
-			'cf_company':j.cf_company,
-			'cf_return_period':j.cf_return_period,
-			},['cf_party',
+def send_notifications(data,company,supplier):
+	d = eval(data)
+	for i in d:
+		doc = frappe.get_all('CD GSTR 2B Entry',
+			{'name':i.get('gstr_2b')},
+			['cf_party',
 			'cf_document_number',
 			'cf_document_date',
 			'cf_taxable_amount',
@@ -611,59 +550,57 @@ def send_notifications(company,supplier):
 			'cf_total_amount',
 			'cf_reason',
 			])
-		print('doc************************',doc)
-		for t in doc:
-			print('TTTTTTTTTTTTTTTTTTTTTTTTTTTTT',t.cf_party,t.cf_document_number,t.cf_document_date)
-		if doc:
-			em = frappe.get_all('Address',['name','email_id'])
-			print('EMMMMMMMMMMMMMMMMMMMMMMMMMMMM',em)
-			for k in em:
-				print('KKKKKKKKKKKKKKKKKKKKKK',k)
-	name= t.cf_party
-	document_number = t.cf_document_number
-	document_date = t.cf_document_date
-	untaxed = t.cf_taxable_amount
-	taxrate = t.cf_tax_rate
-	gst = t.cf_tax_amount
-	gt = t.cf_total_amount
-	reason = t.cf_reason
-	msg=	"""
-			<div style="margin-left:50px;margin-right:50px;">
-			Dear {0},
-			<br><br><br>
-			We have found some anomalies while reconciling the GSTR 2B information as being filed by you on the GST Portal. Please find the details below along with the reason of mis-match.
-			<br><br>
-			Your Sales Invoice: {1}
-			<br>
-			Your Invoice Date: {2}
-			<br>
-			Un-taxed Amount: {3}
-			<br> 
-			Tax Rate : {4}
-			<br>
-			GST Amount: {5}
-			<br> 
-			Grand Total: {6}
-			<br><br>
-			Reason of mismatch: {7}
-			<br><br>
-			Please rectify these changes and revert as soon as possible. Please communicate with the Purchase Department executive or our Accounts Executives for quicker turn around. Please mention your invoice number while communicating.
-			<br><br><br>
-			Thanks
-			<br><br>
-			<Footer from Email account>
-			</div>
 
-	""".format(name,document_number,document_date,untaxed,taxrate,gst,gt,reason)
-	mail = frappe.get_all('Email Account',{'name':'Custom Notifications'},['email_id'])
-	print('emiail^^^^^^^^^^^^^^^^^^^',mail)
-	for i in mail:
-		print('emiail^^^^^^^^^^^^^^^^^^^',i.email_id)
-		try:
-			make(subject = "Email Subject", content=msg, recipients='mwaykole@dexciss.com',
-				send_email=True, sender=i.email_id)
-			
-			msg = """Email send successfully to Employee"""
-			frappe.msgprint(msg)
-		except:
-			frappe.msgprint("could not send")
+		for t in doc:
+			em1 =[]
+			a=frappe.db.get_value("Dynamic Link",{"link_name":t.cf_party},["parent"])
+			if a:
+				email=frappe.db.get_value('Address',a,["email_id"])
+				em1.append(email)
+				name= t.cf_party
+				document_number = t.cf_document_number
+				document_date = t.cf_document_date
+				untaxed = t.cf_taxable_amount
+				taxrate = t.cf_tax_rate
+				gst = t.cf_tax_amount
+				gt = t.cf_total_amount
+				reason = t.cf_reason
+				msg=	"""
+						<div style="margin-left:50px;margin-right:50px;">
+						Dear {0},
+						<br><br><br>
+						We have found some anomalies while reconciling the GSTR 2B information as being filed by you on the GST Portal. Please find the details below along with the reason of mis-match.
+						<br><br>
+						Your Sales Invoice: {1}
+						<br>
+						Your Invoice Date: {2}
+						<br>
+						Un-taxed Amount: {3}
+						<br> 
+						Tax Rate : {4}
+						<br>
+						GST Amount: {5}
+						<br> 
+						Grand Total: {6}
+						<br><br>
+						Reason of mismatch: {7}
+						<br><br>
+						Please rectify these changes and revert as soon as possible. Please communicate with the Purchase Department executive or our Accounts Executives for quicker turn around. Please mention your invoice number while communicating.
+						<br><br><br>
+						Thanks
+						<br><br>
+						<Footer from Email account>
+						</div>
+
+				""".format(name,document_number,document_date,untaxed,taxrate,gst,gt,reason)
+				mail = frappe.get_all('Email Account',{'name':'Custom Notifications'},['email_id'])
+				
+				for i in mail:
+					try:
+						make(subject = t.cf_document_number, content=msg, recipients=email,
+							send_email=True, sender=i.email_id)
+						
+						msg = """Email send successfully"""
+						frappe.msgprint(msg)
+					except:
+						frappe.msgprint("could not send")

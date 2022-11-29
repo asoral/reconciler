@@ -247,7 +247,7 @@ frappe.query_reports["CR GSTR 2B vs PI GSTIN Matching Tool"] = {
 				frappe.throw(__('This action is allowed only for the document view type'));
 				return;
 			}
-		var selected_rows = [];
+		let selected_rows = [];
 		let indexes = query_report.datatable.rowmanager.getCheckedRows();
 		for (let row = 0; row < indexes.length; ++row) {
 			if(query_report.data[indexes[row]]['match_status']!='Missing in 2B'){
@@ -264,9 +264,11 @@ frappe.query_reports["CR GSTR 2B vs PI GSTIN Matching Tool"] = {
 						{
 						method:'reconciler.reconciler.report.cr_gstr_2b_vs_pi_gstin_matching_tool.cr_gstr_2b_vs_pi_gstin_matching_tool.send_notifications',
 						// doc:frm.doc,
+						
 						args:{
 							'company':company.value,
-							'supplier':supplier.value
+							'supplier':supplier.value,
+							'data': selected_rows,
 						},
 						callback: function(r) {
 							console.log('hhjjjj',r.message)
@@ -278,7 +280,9 @@ frappe.query_reports["CR GSTR 2B vs PI GSTIN Matching Tool"] = {
 								frappe.msgprint(__('No Records for these settings.'))
 							}
 						}
+						
 			});
+			
 			}
 		})
 
