@@ -17,6 +17,8 @@ from frappe.utils.user import get_users_with_role
 from six import string_types
 import copy
 from frappe.core.doctype.communication.email import make
+import time,datetime
+from frappe.utils import cint, flt, getdate,formatdate
 
 def execute(filters=None):
 	return MatchingTool(filters).run()
@@ -549,6 +551,7 @@ def send_notifications(data,company,supplier):
 			'cf_tax_amount',
 			'cf_total_amount',
 			'cf_reason',
+			'cf_party_gstin'
 			])
 
 		for t in doc:
@@ -559,12 +562,13 @@ def send_notifications(data,company,supplier):
 				em1.append(email)
 				name= t.cf_party
 				document_number = t.cf_document_number
-				document_date = t.cf_document_date
+				document_date=formatdate(t.cf_document_date, "dd/mm/yyyy")
 				untaxed = t.cf_taxable_amount
 				taxrate = t.cf_tax_rate
 				gst = t.cf_tax_amount
 				gt = t.cf_total_amount
 				reason = t.cf_reason
+				gstin = t.cf_party_gstin
 				msg=	"""
 						<div style="margin-left:50px;margin-right:50px;">
 						Dear {0},
@@ -597,10 +601,85 @@ def send_notifications(data,company,supplier):
 				
 				for i in mail:
 					try:
-						make(subject = t.cf_document_number, content=msg, recipients=email,
+						make(subject = "{0}-{1}-{2}-{3}".format(str(t.cf_reason),str(t.cf_party_gstin),str(t.cf_document_number),str(document_date)),
+							content=msg, recipients=email,
 							send_email=True, sender=i.email_id)
 						
 						msg = """Email send successfully"""
 						frappe.msgprint(msg)
 					except:
 						frappe.msgprint("could not send")
+
+
+@frappe.whitelist()
+def set_content(data,company,supplier):
+	print('data*****************',data)
+	d = eval(data)
+	for i in d:
+		doc = frappe.get_all('CD GSTR 2B Entry',
+			{'name':i.get('gstr_2b')},
+			['cf_party',
+			'cf_document_number',
+			'cf_document_date',
+			'cf_taxable_amount',
+			'cf_tax_rate',
+			'cf_tax_amount',
+			'cf_total_amount',
+			'cf_reason',
+			'cf_party_gstin'
+			])
+
+		for t in doc:
+			em1 =[]
+			a=frappe.db.get_value("Dynamic Link",{"link_name":t.cf_party},["parent"])
+			if a:
+				email=frappe.db.get_value('Address',a,["email_id"])
+				em1.append(email)
+				name= t.cf_party
+				document_number = t.cf_document_number
+				# document_date = t.cf_document_date
+				document_date=formatdate(t.cf_document_date, "dd/mm/yyyy")
+				untaxed = t.cf_taxable_amount
+				taxrate = t.cf_tax_rate
+				gst = t.cf_tax_amount
+				gt = t.cf_total_amount
+				reason = t.cf_reason
+				gstin = t.cf_party_gstin
+				print('yyyyyyyyyyyyyyyyyyyy',t.cf_document_date,document_date)
+				# subject = str(t.cf_document_number) +'-' + str(t.cf_document_date)
+				subject = "{0}-{1}-{2}-{3}".format(str(t.cf_reason),str(t.cf_party_gstin),str(t.cf_document_number),str(document_date))
+				
+
+
+				print('subject&&&&&&&&&&&&&&&',subject)
+				msg=	"""
+						<div style="margin-left:50px;margin-right:50px;">
+						Dear {0},
+						<br><br><br>
+						We have found some anomalies while reconciling the GSTR 2B information as being filed by you on the GST Portal. Please find the details below along with the reason of mis-match.
+						<br><br>
+						Your Sales Invoice: {1}
+						<br>
+						Your Invoice Date: {2}
+						<br>
+						Un-taxed Amount: {3}
+						<br> 
+						Tax Rate : {4}
+						<br>
+						GST Amount: {5}
+						<br> 
+						Grand Total: {6}
+						<br><br>
+						Reason of mismatch: {7}
+						<br><br>
+						Please rectify these changes and revert as soon as possible. Please communicate with the Purchase Department executive or our Accounts Executives for quicker turn around. Please mention your invoice number while communicating.
+						<br><br><br>
+						Thanks
+						<br><br>
+						<Footer from Email account>
+						</div>
+
+				""".format(name,document_number,document_date,untaxed,taxrate,gst,gt,reason)
+
+			print("dhjgdhngcn")
+			return msg,subject
