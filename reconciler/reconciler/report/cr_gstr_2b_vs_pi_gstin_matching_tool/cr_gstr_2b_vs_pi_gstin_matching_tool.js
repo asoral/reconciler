@@ -238,7 +238,7 @@ frappe.query_reports["CR GSTR 2B vs PI GSTIN Matching Tool"] = {
 		})
 
 
-		query_report.page.add_action_item(__("Send Reminder"), () => {
+		query_report.page.add_action_item(__("Send Bulk Reminder"), () => {
 			let company = frappe.query_report.get_filter('company');
 			console.log('comapny**********',company.value)
 			let supplier = frappe.query_report.get_filter('supplier');
@@ -288,7 +288,7 @@ frappe.query_reports["CR GSTR 2B vs PI GSTIN Matching Tool"] = {
 
 
 
-		query_report.page.add_action_item(__("New Email"), () => {
+		query_report.page.add_action_item(__("Send Email"), () => {
 			let supplier = frappe.query_report.get_filter('supplier');
 			let company = frappe.query_report.get_filter('company');
 			let selected_rows = [];
