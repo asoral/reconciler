@@ -64,16 +64,16 @@ class CDGSTR2BDataUploadTool(Document):
 				_("Create GSTR 2B entries already in progress. Please wait for sometime.")
 			)
 		else:
-			enqueue(
-				create_gstr2b_entries,
-				queue = "default",
-				timeout = 6000,
-				event = 'create_gstr2b_entries',
-				json_data = json_data,
-				doc = self,
-				job_name = self.name
-			)
-			# create_gstr2b_entries(json_data, self)
+			# enqueue(
+			# 	create_gstr2b_entries,
+			# 	queue = "default",
+			# 	timeout = 6000,
+			# 	event = 'create_gstr2b_entries',
+			# 	json_data = json_data,
+			# 	doc = self,
+			# 	job_name = self.name
+			# )
+			create_gstr2b_entries(json_data, self)
 			frappe.msgprint(
 				_("Create GSTR 2B entries job added to the queue. Please check after sometime.")
 			)
