@@ -269,15 +269,15 @@ class MatchingTool(object):
 					"width": 70
 				},
 				{
-					"label": "Remarks",
-					"fieldname": "remarks",
+					"label": "ITC Remark",
+					"fieldname": "itc_remark",
 					"fieldtype": "Small Text",
 					"width": 200
 				},
 				{
-					"label": "Eligibility For ITC",
-					"fieldname": "eligibility_for_itc",
-					"fieldtype": "Select",
+					"label": "ITC Taken in Month",
+					"fieldname": "itc_taken_in_month",
+					"fieldtype": "Text",
 					"width": 100
 				},
 				{
@@ -339,7 +339,7 @@ class MatchingTool(object):
 				'cf_purchase_invoice', 'cf_match_status', 'cf_reason', 'cf_status', 'cf_tax_amount','cf_taxable_amount', 'name', 'cf_party','cf_cess_amount','cf_sgst_amount','cf_igst_amount','cf_cgst_amount'])
 
 			for entry in gstr2b_entries:
-				bill_details = frappe.db.get_value("Purchase Invoice", {'name':entry['cf_purchase_invoice']}, ['bill_no', 'bill_date', 'total','itc_central_tax','itc_integrated_tax','itc_state_tax','itc_cess_amount','remarks','eligibility_for_itc'])
+				bill_details = frappe.db.get_value("Purchase Invoice", {'name':entry['cf_purchase_invoice']}, ['bill_no', 'bill_date', 'total','itc_central_tax','itc_integrated_tax','itc_state_tax','itc_cess_amount','itc_remark','itc_taken_in_month'])
 				print("kkkkkoooooooooooooooooo",bill_details)
 				supl_name=frappe.db.get_value("Supplier",{'name':entry['cf_party']},['supplier_name'])
 				print("0000000099999999999999999999999999999",supl_name)
@@ -371,8 +371,8 @@ class MatchingTool(object):
 				'match_status': entry['cf_match_status'], 
 				'reason':entry['cf_reason'],
 				'status': entry['cf_status'],
-				'remarks': bill_details[7] if bill_details and bill_details[7] else None,
-				'eligibility_for_itc': bill_details[8] if bill_details and bill_details[8] else None,
+				'itc_remark': bill_details[7] if bill_details and bill_details[7] else None,
+				'itc_taken_in_month': bill_details[8] if bill_details and bill_details[8] else None,
 				'itc_cess_amount': entry['cf_cess_amount'], 
 				'itc_state_tax': entry['cf_sgst_amount'], 
 				'itc_integrated_tax': entry['cf_igst_amount'], 
@@ -397,7 +397,7 @@ class MatchingTool(object):
 					if 'supplier_gstin' in self.filters:
 						pr_conditions.append(['supplier_gstin' ,'=', self.filters['supplier_gstin']])
 
-					pr_entries = frappe.db.get_all('Purchase Invoice', filters=pr_conditions, fields =['name', 'bill_no', 'bill_date', 'total', 'supplier_gstin', 'supplier','supplier_name','itc_cess_amount','itc_state_tax','itc_integrated_tax','itc_central_tax','remarks','eligibility_for_itc'])
+					pr_entries = frappe.db.get_all('Purchase Invoice', filters=pr_conditions, fields =['name', 'bill_no', 'bill_date', 'total', 'supplier_gstin', 'supplier','supplier_name','itc_cess_amount','itc_state_tax','itc_integrated_tax','itc_central_tax','itc_remark','itc_taken_in_month'])
 					print("oooooooppppppppppppppp",pr_entries)
 
 					for inv in pr_entries:
@@ -419,8 +419,8 @@ class MatchingTool(object):
 								'match_status': 'Missing in 2B', 
 								'reason':None,
 								'status': None,
-								'remarks': inv['remarks'],
-								'eligibility_for_itc': inv['eligibility_for_itc'],
+								'itc_remark': inv['itc_remark'],
+								'itc_taken_in_month': inv['itc_taken_in_month'],
 								# 'itc_cess_amount': inv['itc_cess_amount'],
 								# 'itc_state_tax': inv['itc_state_tax'],
 								# 'itc_central_tax': inv['itc_central_tax'],
