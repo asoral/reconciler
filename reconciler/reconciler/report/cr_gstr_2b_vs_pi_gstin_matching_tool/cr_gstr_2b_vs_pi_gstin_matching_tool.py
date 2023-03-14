@@ -201,7 +201,7 @@ class MatchingTool(object):
 					"fieldname": "supplier",
 					"fieldtype": "Link",
 					"options": "Supplier",
-					"width": 200
+					"width": 100
 				},
 				{
 					"label": "Supplier Name",
@@ -284,15 +284,9 @@ class MatchingTool(object):
 					"width": 70
 				},
 				{
-					"label": "ITC Remark",
-					"fieldname": "itc_remark",
-					"fieldtype": "Data",
-					"width": 200
-				},
-				{
-					"label": "ITC Taken in Month",
-					"fieldname": "itc_taken_in_month",
-					"fieldtype": "Data",
+					"label": "2B SGST",
+					"fieldname": "itc_state_tax",
+					"fieldtype": "Currency",
 					"width": 100
 				},
 				{
@@ -308,14 +302,14 @@ class MatchingTool(object):
 					"width": 100
 				},
 				{
-					"label": "2B SGST",
-					"fieldname": "itc_state_tax",
+					"label": "2B Cess",
+					"fieldname": "itc_cess_amount",
 					"fieldtype": "Currency",
 					"width": 100
 				},
 				{
-					"label": "2B Cess",
-					"fieldname": "itc_cess_amount",
+					"label": "PI SGST",
+					"fieldname": "cf_sgst_amount",
 					"fieldtype": "Currency",
 					"width": 100
 				},
@@ -332,15 +326,21 @@ class MatchingTool(object):
 					"width": 100
 				},
 				{
-					"label": "PI SGST",
-					"fieldname": "cf_sgst_amount",
+					"label": "PI Cess",
+					"fieldname": "cf_cess_amount",
 					"fieldtype": "Currency",
 					"width": 100
 				},
 				{
-					"label": "PI Cess",
-					"fieldname": "cf_cess_amount",
-					"fieldtype": "Currency",
+					"label": "ITC Remark",
+					"fieldname": "itc_remark",
+					"fieldtype": "Small Text",
+					"width": 200
+				},
+				{
+					"label": "ITC Taken in Month",
+					"fieldname": "itc_taken_in_month",
+					"fieldtype": "Text",
 					"width": 100
 				},
 				{
@@ -734,75 +734,131 @@ def send_notifications(data,company,supplier):
 def set_content(data,company,supplier):
 	print('data*****************',data)
 	d = eval(data)
+	print(d)
 	for i in d:
-		doc = frappe.get_all('CD GSTR 2B Entry',
-			{'name':i.get('gstr_2b')},
-			['cf_party',
-			'cf_document_number',
-			'cf_document_date',
-			'cf_taxable_amount',
-			'cf_tax_rate',
-			'cf_tax_amount',
-			'cf_total_amount',
-			'cf_reason',
-			'cf_party_gstin',
-			'cf_cess_amount',
-			'cf_sgst_amount',
-			'cf_igst_amount',
-			'cf_cgst_amount'
-			])
-
-		for t in doc:
-			em1 =[]
-			a=frappe.db.get_value("Dynamic Link",{"link_name":t.cf_party},["parent"])
-			if a:
-				email=frappe.db.get_value('Address',a,["email_id"])
-				em1.append(email)
-				name= t.cf_party
-				document_number = t.cf_document_number
-				# document_date = t.cf_document_date
-				document_date=formatdate(t.cf_document_date, "dd/mm/yyyy")
-				untaxed = t.cf_taxable_amount
-				taxrate = t.cf_tax_rate
-				gst = t.cf_tax_amount
-				gt = t.cf_total_amount
-				reason = t.cf_reason
-				gstin = t.cf_party_gstin
-				print('yyyyyyyyyyyyyyyyyyyy',t.cf_document_date,document_date)
-				# subject = str(t.cf_document_number) +'-' + str(t.cf_document_date)
-				subject = "{0}-{1}-{2}-{3}".format(str(t.cf_reason),str(t.cf_party_gstin),str(t.cf_document_number),str(document_date))
-				
+		if i.get("pr_invoice_no"):
+			print("&&&&&&&&&&&&&&&&&&")
+			doc = frappe.get_all('Purchase Invoice',
+				{'bill_no':i.get('pr_invoice_no')},
+				['*'])
+			print("&&&&&&&&&&&&&&&&&&&&",doc)
+			for t in doc:
+				em1 =[]
+				a=frappe.db.get_value("Dynamic Link",{"link_name":t.supplier},["parent"])
+				if a:
+					email=frappe.db.get_value('Address',a,["email_id"])
+					em1.append(email)
+					name= t.supplier_name
+					document_number = t.bill_no
+					# document_date = t.cf_document_date
+					document_date=formatdate(t.bill_date, "dd/mm/yyyy")
+					# untaxed = t.cf_taxable_amount
+					# taxrate = t.total_taxes_and_charges
+					gst = t.total_taxes_and_charges
+					gt = t.total
+					reason = "Missing in 2B"
+					gstin = t.supplier_gstin
+					# print('yyyyyyyyyyyyyyyyyyyy',t.cf_document_date,document_date)
+					# subject = str(t.cf_document_number) +'-' + str(t.cf_document_date)
+					subject = "{0}-{1}-{2}".format("Missing in 2B",str(t.bill_no),str(document_date))
+					
 
 
-				print('subject&&&&&&&&&&&&&&&',subject)
-				msg=	"""
-						<div style="margin-left:50px;margin-right:50px;">
-						Dear {0},
-						<br><br><br>
-						We have found some anomalies while reconciling the GSTR 2B information as being filed by you on the GST Portal. Please find the details below along with the reason of mis-match.
-						<br><br>
-						Your Sales Invoice: {1}
-						<br>
-						Your Invoice Date: {2}
-						<br>
-						Un-taxed Amount: {3}
-						<br> 
-						Tax Rate : {4}
-						<br>
-						GST Amount: {5}
-						<br> 
-						Grand Total: {6}
-						<br><br>
-						Reason of mismatch: {7}
-						<br><br>
-						Please rectify these changes and revert as soon as possible. Please communicate with the Purchase Department executive or our Accounts Executives for quicker turn around. Please mention your invoice number while communicating.
-						<br><br><br>
-						Thanks
-						<br><br>
-						<Footer from Email account>
-						</div>
+					print('subject&&&&&&&&&&&&&&&',subject)
+					msg=	"""
+							<div style="margin-left:50px;margin-right:50px;">
+							{0},
+							<br><br><br>
+							We have found some anomalies while reconciling the GSTR 2B information as being filed by you on the GST Portal. Please find the details below along with the reason of mis-match.
+							<br><br>
+							Your Sales Invoice: {1}
+							<br>
+							Your Invoice Date: {2}
+							<br> 
+							Grand Total: {4}
+							<br><br>
+							Reason of mismatch: {5}
+							<br><br>
+							Please rectify these changes and revert as soon as possible. Please communicate with the Purchase Department executive or our Accounts Executives for quicker turn around. Please mention your invoice number while communicating.
+							<br><br><br>
+							Thanks
+							<br><br>
+							<Footer from Email account>
+							</div>
 
-				""".format(name,document_number,document_date,untaxed,taxrate,gst,gt,reason)
+					""".format(name,document_number,document_date,gst,gt,reason)
 
-			print("dhjgdhngcn")
-			return msg,subject
+				print("dhjgdhngcn")
+				return msg,subject
+		else:
+			doc = frappe.get_all('CD GSTR 2B Entry',
+				{'name':i.get('gstr_2b')},
+				['cf_party',
+				'cf_document_number',
+				'cf_document_date',
+				'cf_taxable_amount',
+				'cf_tax_rate',
+				'cf_tax_amount',
+				'cf_total_amount',
+				'cf_reason',
+				'cf_party_gstin',
+				'cf_cess_amount',
+				'cf_sgst_amount',
+				'cf_igst_amount',
+				'cf_cgst_amount'
+				])
+
+			for t in doc:
+				em1 =[]
+				a=frappe.db.get_value("Dynamic Link",{"link_name":t.cf_party},["parent"])
+				if a:
+					email=frappe.db.get_value('Address',a,["email_id"])
+					em1.append(email)
+					name= t.cf_party
+					document_number = t.cf_document_number
+					# document_date = t.cf_document_date
+					document_date=formatdate(t.cf_document_date, "dd/mm/yyyy")
+					untaxed = t.cf_taxable_amount
+					taxrate = t.cf_tax_rate
+					gst = t.cf_tax_amount
+					gt = t.cf_total_amount
+					reason = t.cf_reason
+					gstin = t.cf_party_gstin
+					print('yyyyyyyyyyyyyyyyyyyy',t.cf_document_date,document_date)
+					# subject = str(t.cf_document_number) +'-' + str(t.cf_document_date)
+					subject = "{0}-{1}-{2}-{3}".format(str(t.cf_reason),str(t.cf_party_gstin),str(t.cf_document_number),str(document_date))
+					
+
+
+					print('subject&&&&&&&&&&&&&&&',subject)
+					msg=	"""
+							<div style="margin-left:50px;margin-right:50px;">
+							Dear {0},
+							<br><br><br>
+							We have found some anomalies while reconciling the GSTR 2B information as being filed by you on the GST Portal. Please find the details below along with the reason of mis-match.
+							<br><br>
+							Your Sales Invoice: {1}
+							<br>
+							Your Invoice Date: {2}
+							<br>
+							Un-taxed Amount: {3}
+							<br> 
+							Tax Rate : {4}
+							<br>
+							GST Amount: {5}
+							<br> 
+							Grand Total: {6}
+							<br><br>
+							Reason of mismatch: {7}
+							<br><br>
+							Please rectify these changes and revert as soon as possible. Please communicate with the Purchase Department executive or our Accounts Executives for quicker turn around. Please mention your invoice number while communicating.
+							<br><br><br>
+							Thanks
+							<br><br>
+							<Footer from Email account>
+							</div>
+
+					""".format(name,document_number,document_date,untaxed,taxrate,gst,gt,reason)
+
+				print("dhjgdhngcn")
+				return msg,subject

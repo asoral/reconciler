@@ -145,7 +145,7 @@ frappe.query_reports["CR GSTR 2B vs PI GSTIN Matching Tool"] = {
 			label: __("View Type"),
 			fieldtype: "Select",
 			options: ['Supplier View', 'Document View'],
-			default: 'Supplier View',
+			default: 'Document View',
 			reqd: 1
 		},
 		{
@@ -190,9 +190,9 @@ frappe.query_reports["CR GSTR 2B vs PI GSTIN Matching Tool"] = {
 		var selected_rows = [];
 		let indexes = query_report.datatable.rowmanager.getCheckedRows();
 		for (let row = 0; row < indexes.length; ++row) {
-			if(query_report.data[indexes[row]]['match_status']!='Missing in 2B'){
+			// if(query_report.data[indexes[row]]['match_status']!='Missing in 2B'){
 			selected_rows.push({'gstr_2b':query_report.data[indexes[row]]['gstr_2b']});
-		}
+		// }
 		}
 			if($.isEmptyObject(selected_rows))
 			{
@@ -217,9 +217,9 @@ frappe.query_reports["CR GSTR 2B vs PI GSTIN Matching Tool"] = {
 		var selected_rows = [];
 		let indexes = query_report.datatable.rowmanager.getCheckedRows();
 		for (let row = 0; row < indexes.length; ++row) {
-			if(query_report.data[indexes[row]]['match_status']!='Missing in 2B'){
+			// if(query_report.data[indexes[row]]['match_status']!='Missing in 2B'){
 			selected_rows.push({'gstr_2b':query_report.data[indexes[row]]['gstr_2b']});
-		}
+		// }
 		}
 			if($.isEmptyObject(selected_rows))
 			{
@@ -296,6 +296,10 @@ frappe.query_reports["CR GSTR 2B vs PI GSTIN Matching Tool"] = {
 				for (let row = 0; row < indexes.length; ++row) {
 					if(query_report.data[indexes[row]]['match_status']!='Missing in 2B'){
 					selected_rows.push({'gstr_2b':query_report.data[indexes[row]]['gstr_2b']});
+				}
+				else{
+					console.log("&&&&&&&&&&&&&&&&&&&",query_report.data[indexes[row]])
+					selected_rows.push({'pr_invoice_no':query_report.data[indexes[row]]['pr_invoice_no']});
 				}
 				}
 					if($.isEmptyObject(selected_rows))
@@ -1072,9 +1076,9 @@ frappe.query_reports["CR GSTR 2B vs PI GSTIN Matching Tool"] = {
 				let selected_rows = [];
 				let indexes = query_report.datatable.rowmanager.getCheckedRows();
 				for (let row = 0; row < indexes.length; ++row) {
-					if(query_report.data[indexes[row]]['match_status']!='Missing in 2B'){
+					// if(query_report.data[indexes[row]]['match_status']!='Missing in 2B'){
 					selected_rows.push({'gstr_2b':query_report.data[indexes[row]]['gstr_2b']});
-				}
+				// }
 				}
 					if($.isEmptyObject(selected_rows))
 					{
