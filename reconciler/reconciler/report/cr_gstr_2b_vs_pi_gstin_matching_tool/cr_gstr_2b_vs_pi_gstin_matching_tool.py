@@ -183,7 +183,20 @@ class MatchingTool(object):
 				gstr2b_conditions.append(['cf_party', 'in', suppliers])
 
 			if not 'supplier' in self.filters and not 'supplier_gstin' in self.filters:
-				self.columns +=[{
+				self.columns +=[
+				{
+					"label": "Purchase Invoice no",
+					"fieldname": "name",
+					"fieldtype": "Data",
+					"width": 200
+				},
+				{
+					"label": "Purchase Invoice Date",
+					"fieldname": "posting_date",
+					"fieldtype": "Date",
+					"width": 200
+				},
+				{
 					"label": "Supplier",
 					"fieldname": "supplier",
 					"fieldtype": "Link",
@@ -223,13 +236,15 @@ class MatchingTool(object):
 				{
 					"label": "2B Inv Date",
 					"fieldname": "2b_invoice_date",
-					"fieldtype": "Data",
+					"fieldtype": "Date",
+					"default":"DD/MM/YYYY",
 					"width": 90
 				},
 				{
 					"label": "PI Inv Date",
 					"fieldname": "pr_invoice_date",
-					"fieldtype": "Data",
+					"fieldtype": "Date",
+					"default":"DD/MM/YYYY",
 					"width": 90
 				},
 				{
@@ -271,13 +286,13 @@ class MatchingTool(object):
 				{
 					"label": "ITC Remark",
 					"fieldname": "itc_remark",
-					"fieldtype": "Small Text",
+					"fieldtype": "Data",
 					"width": 200
 				},
 				{
 					"label": "ITC Taken in Month",
 					"fieldname": "itc_taken_in_month",
-					"fieldtype": "Text",
+					"fieldtype": "Data",
 					"width": 100
 				},
 				{
@@ -339,7 +354,7 @@ class MatchingTool(object):
 				'cf_purchase_invoice', 'cf_match_status', 'cf_reason', 'cf_status', 'cf_tax_amount','cf_taxable_amount', 'name', 'cf_party','cf_cess_amount','cf_sgst_amount','cf_igst_amount','cf_cgst_amount'])
 
 			for entry in gstr2b_entries:
-				bill_details = frappe.db.get_value("Purchase Invoice", {'name':entry['cf_purchase_invoice']}, ['bill_no', 'bill_date', 'total','itc_central_tax','itc_integrated_tax','itc_state_tax','itc_cess_amount','itc_remark','itc_taken_in_month'])
+				bill_details = frappe.db.get_value("Purchase Invoice", {'name':entry['cf_purchase_invoice']}, ['bill_no', 'bill_date', 'total','itc_central_tax','itc_integrated_tax','itc_state_tax','itc_cess_amount','itc_remark','itc_taken_in_month','name','posting_date'])
 				print("kkkkkoooooooooooooooooo",bill_details)
 				supl_name=frappe.db.get_value("Supplier",{'name':entry['cf_party']},['supplier_name'])
 				print("0000000099999999999999999999999999999",supl_name)
@@ -357,6 +372,8 @@ class MatchingTool(object):
 					tax_diff = round(abs(entry['cf_tax_amount']- get_tax_details(entry['cf_purchase_invoice'])['total_tax_amount']), 2)
 				
 				data.append({
+				'name': bill_details[9] if bill_details and bill_details[9] else None,
+				'posting_date': bill_details[10] if bill_details and bill_details[10] else None,	
 				'supplier': entry['cf_party'],
 				'supplier_name': supl_name if supl_name and supl_name else None,
 
@@ -397,7 +414,7 @@ class MatchingTool(object):
 					if 'supplier_gstin' in self.filters:
 						pr_conditions.append(['supplier_gstin' ,'=', self.filters['supplier_gstin']])
 
-					pr_entries = frappe.db.get_all('Purchase Invoice', filters=pr_conditions, fields =['name', 'bill_no', 'bill_date', 'total', 'supplier_gstin', 'supplier','supplier_name','itc_cess_amount','itc_state_tax','itc_integrated_tax','itc_central_tax','itc_remark','itc_taken_in_month'])
+					pr_entries = frappe.db.get_all('Purchase Invoice', filters=pr_conditions, fields =['name', 'bill_no', 'bill_date', 'total', 'supplier_gstin', 'supplier','supplier_name','itc_cess_amount','itc_state_tax','itc_integrated_tax','itc_central_tax','itc_remark','itc_taken_in_month','posting_date'])
 					print("oooooooppppppppppppppp",pr_entries)
 
 					for inv in pr_entries:
@@ -406,6 +423,8 @@ class MatchingTool(object):
 							tax_diff = get_tax_details(inv['name'])['total_tax_amount']
 							button = f"""<Button class="btn btn-primary btn-xs center"  gstr2b = '' purchase_inv ={inv["name"]} onClick='render_summary(this.getAttribute("gstr2b"), this.getAttribute("purchase_inv"))'>View</a>"""
 							data.append({
+								'name': inv['name'],
+								'date': inv['posting_date'],
 								'supplier': inv['supplier'],
 								'supplier_name': inv['supplier_name'],
 								'gstin': inv['supplier_gstin'],
