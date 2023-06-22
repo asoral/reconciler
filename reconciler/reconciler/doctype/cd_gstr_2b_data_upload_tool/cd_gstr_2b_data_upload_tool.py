@@ -44,11 +44,10 @@ class CDGSTR2BDataUploadTool(Document):
 		json_data = frappe.get_file_json(frappe.local.site_path + self.cf_upload_gstr_2b_data)
 		return_period = json_data['data']['rtnprd']
 		existing_doc = frappe.db.get_value('CD GSTR 2B Data Upload Tool', {'cf_return_period': return_period}, 'name')
-		a = frappe.get_all('CD GSTR 2B Entry',{'docstatus':0},['name'])
-		if existing_doc and not existing_doc == self.name:
-			for i in a:
-				d = frappe.delete_doc('CD GSTR 2B Entry',i.name)
-		# 	frappe.throw(_(f'Unable to proceed. Already another document {comma_and("""<a href="#Form/CD GSTR 2B Data Upload Tool/{0}">{1}</a>""".format(existing_doc, existing_doc))} uploaded for the return period {frappe.bold(return_period)}.'))
+		cd_en= frappe.get_all('CD GSTR 2B Entry',{'docstatus':0,'cf_return_period': return_period},['name'])
+		for i in cd_en:
+			if existing_doc and not existing_doc == self.name:
+				frappe.delete_doc('CD GSTR 2B Entry',i.name)
 		if not json_data['data']['gstin'] == self.cf_company_gstin:
 			frappe.throw(_(f'Invalid JSON. Company GSTIN mismatched with uploaded 2B data.'))
 
