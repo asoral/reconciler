@@ -187,14 +187,15 @@ class MatchingTool(object):
 				{
 					"label": "Purchase Invoice no",
 					"fieldname": "name",
-					"fieldtype": "Data",
-					"width": 200
+					"fieldtype": "Link",
+					"options": "Purchase Invoice",
+					"width": 100
 				},
 				{
 					"label": "Purchase Invoice Date",
 					"fieldname": "posting_date",
 					"fieldtype": "Date",
-					"width": 200
+					"width": 100
 				},
 				{
 					"label": "Supplier",
@@ -207,7 +208,7 @@ class MatchingTool(object):
 					"label": "Supplier Name",
 					"fieldname": "supplier_name",
 					"fieldtype": "data",
-					"width": 200
+					"width": 150
 				},
 				
 				{
